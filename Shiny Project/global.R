@@ -3,6 +3,7 @@
 library(dplyr)
 library(ggplot2)
 library(ggthemes)
+library(ggvis)
 library(leaflet)
 library(RColorBrewer)
 library(DT)
@@ -10,28 +11,25 @@ library(shiny)
 library(shinydashboard)
 
 #load various data sets
-clean_bm <- tbl_df(read.csv("~/NYCDSA /Shiny Project/clean_bm.csv"))
-full_zips <- tbl_df(read.csv("~/NYCDSA /Shiny Project/full_zips.csv"))
+clean_bm <- tbl_df(read.csv("clean_bm.csv"))
+full_zips <- tbl_df(read.csv("full_zips.csv"))
 
 cities <- c("New York City" = "New York City",
             "Washington, DC" = "DC",
             "San Francisco" = "San Francisco")
 
 mapcities <- c("New York City" = "NYC",
-            "Washington, DC" = "DC")
+            "Washington, DC" = "DC",
+            "San Francisco" = "San Francisco")
 
 qpal <- colorQuantile(colorRamp(c("#0000FF", "#FF0000"), interpolate="spline"), full_zips$MedSourceEUI, n = 10)
 
-# hues <- c("#999999", "#E69F00", "#56B4E9")
-# city_hues <- data.frame(cities, hues)
-# city_hues$hues <- as.character(city_hues$hues)
+plotxvalues = c("Weather Normalized Source EUI"               = "NormSourceEUI",
+                "Site EUI"                                    = "SiteEUI", 
+                "Source EUI"                                  = "SourceEUI", 
+                "Weather Normalized Site EUI"                 = "NormSiteEUI")
 
-plotvalues = c("Year"                                        = "Year", 
-               "Weather Normalized Source EUI"               = "NormSourceEUI",
-               "Reported Floor Area"                         = "ReportedGFA",
-               "Site EUI"                                    = "SiteEUI", 
-               "Source EUI"                                  = "SourceEUI", 
-               "Weather Normalized Site EUI"                 = "NormSiteEUI")
+plotyvalues = c("Reported Floor Area"                         = "ReportedGFA")
 
 plotrev = c(   "Year" = "Year", 
                "NormSourceEUI" = "Weather Normalized Source EUI",
@@ -40,7 +38,7 @@ plotrev = c(   "Year" = "Year",
                "SourceEUI" = "Source EUI", 
                "NormSiteEUI", "Weather Normalized Site EUI")
 
-#My RStudio won't seem to save RDS or RDATA files, so i'll just do this from the CSV:
+#My RStudio won't seem to save RDS or RDATA files, so i'll just do this:
 clean_bm$city <- as.character(clean_bm$city)
 clean_bm$Borough <- as.factor(clean_bm$Borough)
 clean_bm$Zip.Code <- as.integer(clean_bm$Zip.Code)

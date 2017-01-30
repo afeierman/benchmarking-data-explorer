@@ -7,10 +7,10 @@ library(ggthemes)
 
 ##############################################NYC########################################################
 #Data is released on a year by year basis. Read each year in, then add to a central DF
-nyc_bm_2014 <- tbl_df(read.csv("~/NYCDSA /Shiny Project/NYC/Energy_and_Water_Data_Disclosure_for_Local_Law__2014_NYC.csv"))
-nyc_bm_2013 <- tbl_df(read.csv("~/NYCDSA /Shiny Project/NYC/Energy_and_Water_Data_Disclosure_for_Local_Law_84__2013_.csv"))
-nyc_bm_2012 <- tbl_df(read.csv("~/NYCDSA /Shiny Project/NYC/Energy_and_Water_Data_Disclosure_for_Local_Law_84__2012_.csv"))
-nyc_bm_2011 <- tbl_df(read.csv("~/NYCDSA /Shiny Project/NYC/Energy_and_Water_Data_Disclosure_for_Local_Law_84__2011_.csv"))
+nyc_bm_2014 <- tbl_df(read.csv("shinyp/Shiny Project/NYC/Energy_and_Water_Data_Disclosure_for_Local_Law__2014_NYC.csv"))
+nyc_bm_2013 <- tbl_df(read.csv("shinyp/Shiny Project/NYC/Energy_and_Water_Data_Disclosure_for_Local_Law_84__2013_.csv"))
+nyc_bm_2012 <- tbl_df(read.csv("shinyp/Shiny Project/NYC/Energy_and_Water_Data_Disclosure_for_Local_Law_84__2012_.csv"))
+nyc_bm_2011 <- tbl_df(read.csv("shinyp/Shiny Project/NYC/Energy_and_Water_Data_Disclosure_for_Local_Law_84__2011_.csv"))
 
 nyc_bm_2014$Year = 2014
 nyc_bm_2013$Year = 2013
@@ -86,11 +86,11 @@ remove(nyc_bm_2011, nyc_bm_2012, nyc_bm_2013, nyc_bm_2014, trim_2011, trim_2012,
 
 #xlsx library is necessary to read in DC benchmarking data
 library(xlsx)
-dc_bm_2011 <- tbl_df(read.xlsx("~/NYCDSA /Shiny Project/DC/BenchmarkDC_Disclosure_2011_final_022014.xlsx", 1))
-dc_bm_2012 <- tbl_df(read.xlsx("~/NYCDSA /Shiny Project/DC/BenchmarkDC_Disclosure_2012_final_022014.xlsx", 1))
-dc_bm_2013 <- tbl_df(read.csv("~/NYCDSA /Shiny Project/DC/2013 Energy and Water Performance Benchmarking Results 09-30-2016.csv"))
-dc_bm_2014 <- tbl_df(read.csv("~/NYCDSA /Shiny Project/DC/2014 Energy and Water Performance Benchmarking Results 09-30-2016.csv"))
-dc_bm_2015 <- tbl_df(read.csv("~/NYCDSA /Shiny Project/DC/2015 Energy and Water Performance Benchmarking Results 09-30-2016.csv"))
+dc_bm_2011 <- tbl_df(read.xlsx("~/shinyp/Shiny Project/DC/BenchmarkDC_Disclosure_2011_final_022014.xlsx", 1))
+dc_bm_2012 <- tbl_df(read.xlsx("~/shinyp/Shiny Project/DC/BenchmarkDC_Disclosure_2012_final_022014.xlsx", 1))
+dc_bm_2013 <- tbl_df(read.csv("~/shinyp/Shiny Project/DC/2013 Energy and Water Performance Benchmarking Results 09-30-2016.csv"))
+dc_bm_2014 <- tbl_df(read.csv("~/shinyp/Shiny Project/DC/2014 Energy and Water Performance Benchmarking Results 09-30-2016.csv"))
+dc_bm_2015 <- tbl_df(read.csv("~/shinyp/Shiny Project/DC/2015 Energy and Water Performance Benchmarking Results 09-30-2016.csv"))
 #I would like to use this, but unsure how to assign each converted data frame to the right variable
 #sapply(c(dc_bm_2011, dc_bm_2012, dc_bm_2013, dc_bm_2014, dc_bm_2015), tbl_df)
 
@@ -201,23 +201,36 @@ nyc_zips <- rename(nyc_zips, zip = Zip.Code)
 
 dc_zips <- unique(bm_full[bm_full$city == "DC", ])
 dc_zips <- rename(dc_zips, zip = Zip.Code)
-head(dc_zips)
+
+##read in SF data from the future
+sf_tidy <- read.csv("sf_tidy.csv")
+sf_tidy <- rename(sf_tidy, zip = Zip.Code)
+
+sf_tidy <- group_by(sf_tidy, Year, zip) %>%
+  summarize("Count" = n(), "MedNormSourceEUI" = median(as.numeric(NormSourceEUI), na.rm=TRUE), 
+            "MedSiteEUI" = median(as.numeric(SiteEUI)), "MedSourceEUI" = median(as.numeric(SourceEUI), na.rm = T),
+            "MedNormSiteEUI" = median(as.numeric(NormSiteEUI), na.rm = T))
 
 library(zipcode)
 data(zipcode)
+?merge
 nyc_data <- merge(nyc_zips, zipcode, by.x="zip",by.y="zip")
 dc_data <- merge(dc_zips, zipcode, by.x="zip",by.y="zip" )
+sf_data <- merge(sf_zips, zipcode, by.x="zip",by.y="zip")
+
+sf_data$Year <- as.factor(sf_data$Year)
+sf_data$zip <- as.character(sf_data$zip)
+sf_data$city.x <- sf_data$city
+sf_data$city <- NULL
+
 full_zips <- full_join(nyc_data, dc_data)
-head(full_zips)
-full_zips$city.x
+full_zips <- full_join(full_zips, sf_data)
 full_zips %>%
-  filter(city.x %in% "DC")
+  filter(city.x %in% "San Francisco")
 full_zips
-write.csv(full_zips, "~/NYCDSA /Shiny Project/full_zips.csv")
+write.csv(full_zips, "~/shinyp/Shiny Project/full_zips.csv")
 
-ggmap(get_map("New York, New York",zoom=11,color = "bw")) + geom_point(data=filter(full_zips, city.x %in% "NYC"), aes(x=longitude,y=latitude, size = MedNormSourceEUI), color='red') + scale_color_gradient(low = 'green', high = 'orange')
 
-ggmap(get_map("Washington, DC",zoom=12,color = "bw")) + geom_point(data=dc_data, aes(x=longitude,y=latitude, size = MedNormSourceEUI), color='green') + scale_color_gradient(low = 'green', high = 'orange')
 ######################################PLOTTING#####################################
 
 #xploratory plotting
@@ -245,31 +258,4 @@ ggplot(nyc_shiny, aes(x = MedSourceEUI, fill = Borough)) + geom_histogram(bins =
 ggplot(nyc_shiny, aes(x = MedNormSourceEUI, fill = Borough)) + geom_histogram(bins = 100) + xlim(0, 1000) + ggtitle("Median Weather Normalized Source EUI by Zip Code") +theme_economist()
 ggplot(nyc_shiny, aes(x = MedSiteEUI, fill = Borough)) + geom_histogram(bins = 100) + xlim(0, 1000) + theme_gdocs() + ggtitle("Median Site EUI by Zip Code")
 ggplot(nyc_shiny, aes(x = MedNormSiteEUI, fill = Borough)) + geom_histogram(bins = 100) + xlim(0, 1000) + ggtitle("Median Weather Normalized Source EUI by Zip Code") + theme_fivethirtyeight()
-
-#switching map
-
-
-
-################################MAPS##################################################
-library(choroplethr)
-library(choroplethrMaps)
-library(mapproj)
-library(choroplethrZip)
-
-ny2014 <- nyc_shiny[nyc_shiny$Year == 2014,]
-ny2014$region <- ny2014$Zip.Code
-ny2014
-# FIPS codes for the 5 counties (boroughs) of New York City
-nyc_fips = c(36005, 36047, 36061, 36081, 36085)
-
-zip_choropleth(ny2014, title=title, county_zoom=nyc_fips)
-# print a map for each column of the demographic data.frame
-for (i in 4:8) {
-  # set the data and title
-  ny2014$value <- ny2014[[i]]
-  title = paste0("New York City Benchmarking Stats by Zip Code:\n", colnames(ny2014[i]))
-  # print the map
-  choro = zip_choropleth(ny2014, title=title, county_zoom=nyc_fips)
-  print(choro)
-}
 

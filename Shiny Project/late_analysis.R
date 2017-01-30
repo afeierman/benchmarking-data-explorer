@@ -4,7 +4,7 @@ clean_bm <- tbl_df(read.csv("~/NYCDSA /Shiny Project/full_data.csv"))
 
 clean_bm2 <- tbl_df(read.csv("~/NYCDSA /Shiny Project/clean_bm.csv"))
 clean_bm$PropType
-sf_data <- tbl_df(read.csv("~/NYCDSA /Shiny Project/San Francisco/Existing_Commercial_Buildings_Energy_Performance_Ordinance_Report_Clean.csv"))
+sf_data <- tbl_df(read.csv("shinyp/Shiny Project/San Francisco/Existing_Commercial_Buildings_Energy_Performance_Ordinance_Report_Clean.csv"))
 
 sf_data <- rename(sf_data, X2012.Weather.Normalized.Source.EUI..kBtu.ft2. = X2012.Weather.Normalized.Source.EUI..kBtu.sq.ft.)
 sf_data$city = c("San Francisco")
@@ -20,6 +20,8 @@ sf_tidy <- sf_data %>%
 
 clean_bm[] <- lapply(clean_bm, as.character)
 sf_tidy[] <- lapply(sf_tidy, as.character)
+write.csv(sf_tidy, "sf_tidy.csv")
+
 
 clean_bm <- full_join(clean_bm, sf_tidy)
 

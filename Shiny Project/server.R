@@ -1,5 +1,5 @@
 ## server.R ##
-
+library(scales)
 shinyServer(
 
   function(input, output, session){
@@ -32,6 +32,7 @@ shinyServer(
       geom_point(aes(color = factor(city))) + graph1xlims() + graph1ylims() + xlab(plotrev[input$xvar]) +
       ylab(plotrev[input$yvar]) + scale_color_discrete(name="City", breaks=c(input$show_cities), labels=c(input$show_cities)) + guides(alpha = FALSE)
   })
+  
 
   cityplots <- reactive({
     clean_bm %>%
@@ -50,16 +51,17 @@ shinyServer(
   })
 
   output$city1 <- renderPlot({
-    ggplot(citygroup(), aes(x = Year, y = count, fill = "blue")) + geom_histogram(width = .4, stat='identity') + 
-      ggtitle(paste0(input$radio, " Buildings Reporting Each Year")) + 
+    ggplot(citygroup(), aes(x = Year, y = count, fill = factor(Year))) + geom_histogram(width = .4, stat='identity') + 
+      ggtitle(paste0(input$radio, " Buildings\n Reporting Each Year")) + 
       ylab("") + theme_gdocs() + theme(plot.title = element_text(hjust = 0.5)) + scale_fill_discrete(guide = F)
   })  
 
   output$city2 <- renderPlot({
     c2 <- ggplot(cityplots(), aes(y = ReportedGFA, x = NormSourceEUI, color = as.factor(Year))) +
-      geom_point(alpha = .4) + ggtitle("Building Size vs. Energy Use per Square Foot") +
-      scale_fill_gradient() + ylab("Building Size (ft2)") + xlab("EUI (kBtu / ft2)") +
-      theme(plot.title = element_text(hjust = 0.5)) + theme_gdocs()
+      geom_point(alpha = .5) + ggtitle("Building Size vs. \nEnergy Use per Square Foot") +
+      scale_color_discrete(name="Year") + ylab("Building Size (ft2)") + xlab("Energy Use Intensity (kBtu / ft2)") + 
+      theme_gdocs() + theme(plot.title = element_text(hjust = 0.5)) + 
+      scale_y_continuous(labels = comma)
     if (input$log==TRUE){
       c2 <- c2 + coord_trans(y = 'log', x = 'log')  
       }
@@ -67,11 +69,10 @@ shinyServer(
   })
   
   output$city3 <- renderPlot({
-    c3 <- ggplot(cityplots(), aes(x = ReportedGFA, y = ENERGY.STAR.Score, color = log2(NormSourceEUI))) + geom_point() +
-      xlim(0, 4000000) + ggtitle("Building Size vs. ENERGY STAR Score") + xlab("Building Size (ft2)") +
-      theme(plot.title = element_text(hjust = 0.5)) +
+    c3 <- ggplot(cityplots(), aes(x = ReportedGFA, y = ENERGY.STAR.Score, color = log10(NormSourceEUI))) +
+      geom_point() + ggtitle("Building Size vs. \nENERGY STAR Score") + xlab("Building Size (ft2)") +
       scale_color_gradient(name = "ENERGY STAR Scores", low = 'green', high = 'red') + guides(color=F) +
-      theme_gdocs()
+      theme_gdocs() + theme(plot.title = element_text(hjust = 0.5)) + scale_x_continuous(labels = comma, breaks=seq(0, 3000000, 1000000), limits=c(0, 3000000))
     if (input$log==TRUE){
         c3 <- c3 + coord_trans(y = 'log') + geom_jitter()
       }
@@ -81,8 +82,7 @@ shinyServer(
     ggplot(cityviolin(), aes(x = PropType, y = NormSourceEUI, group = PropType)) + 
       geom_violin(aes(fill = factor(PropType))) + ylim(0, 1000) + scale_color_brewer() + 
       ggtitle("Energy Use Intensity\n In Common Property Types") + xlab("Grouped Property Type") +
-      ylab("Energy Use Per Square Foot\n (kBtu/ft2)") + theme(plot.title = element_text(hjust = 0.5)) +
-      theme_gdocs()
+      ylab("Energy Use Per Square Foot\n (kBtu/ft2)") + theme_gdocs() + theme(legend.position='none', plot.title = element_text(hjust = 0.5))
   })
 
   filteredData <- reactive({
@@ -101,39 +101,46 @@ shinyServer(
   observe({
     qpal <- colorpal()
     if (input$mapcity == "NYC") {
-      mapx <- -73.90 
+      mapx <- -73.8 
       mapy <- 40.7128
       mapzoom <- 11
     }
     if (input$mapcity == "DC") {
-      mapx <- -77.0369
-      mapy <- 38.9072
+      mapx <- -77
+      mapy <- 38.94
+      mapzoom <- 12
+    }
+    
+    if(input$mapcity == "San Francisco") 
+    {mapx <- -122.4194
+      mapy <- 37.76 
       mapzoom <- 12
     }
 
     leafletProxy("map", data = filteredData()) %>%
       clearShapes() %>% 
       setView(lng = mapx, lat = mapy, zoom = mapzoom) %>%
-      addCircles(~longitude, ~latitude, color = ~qpal(MedNormSourceEUI), weight = 5, fillColor = ~qpal(MedNormSourceEUI), fillOpacity = .9, popup = ~paste("Source EUI:", MedNormSourceEUI, " Zip Code:", zip), radius = ~full_zips$MedNormSourceEUI)
+      addCircles(~longitude, ~latitude, color = ~qpal(MedNormSourceEUI), weight = 5, fillColor = ~qpal(MedNormSourceEUI), fillOpacity = .9, popup = ~paste("Zip Code:", zip, "\n"," Source EUI:", MedNormSourceEUI), radius = ~(full_zips$MedNormSourceEUI))
   })
   
   #customize data table output
   cityinfo <- reactive({
     clean_bm %>% 
-      select(City = city, Year, "Zip Code" = Zip.Code, "Site EUI" = SiteEUI, "Source EUI" = SourceEUI, "Weather Normalized Site EUI" =NormSiteEUI, "Weather Normalized Source EUI" = NormSourceEUI, "ENERGY STAR Score" = ENERGY.STAR.Score, "Reported Floor Area" = ReportedGFA, "Property Type" = PropType)%>%
+      select(City = city, Year, "Zip Code" = Zip.Code, "Site EUI" = SiteEUI, "Source EUI" = SourceEUI, "Weather Normalized Site EUI" =NormSiteEUI, "Weather Normalized Source EUI" = NormSourceEUI, "ENERGY STAR Score" = ENERGY.STAR.Score, "Reported Floor Area" = ReportedGFA, "Property Type" = PropType) %>%
       filter(City %in% input$data_cities, Year %in% input$data_years)
   })  
   
-  output$willitwork <- reactive({
-    paste0("Stats about ", input$radio)
-  })
-  
-  output$citystats1 <- reactive({
-    paste0(input$radio, " has released ", length(unique(cityplots()$Year)), " years of data.")
-  })
-  
-  output$citystats2 <- reactive({
-    paste0("In total, ", length(unique(cityplots()$ID)), " buildings have reported data to New York City.")
-  })
+  #Stats feature to be added later!
+  # output$willitwork <- reactive({
+  #   paste0("Stats about ", input$radio)
+  # })
+  # 
+  # output$citystats1 <- reactive({
+  #   paste0(input$radio, " has released ", length(unique(cityplots()$Year)), " years of data.")
+  # })
+  # 
+  # output$citystats2 <- reactive({
+  #   paste0("In total, ", length(unique(cityplots()$ID)), " buildings have reported data to New York City.")
+  # })
   
 })
