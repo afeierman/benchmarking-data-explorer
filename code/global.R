@@ -30,7 +30,7 @@ plotrev = c(   "Year" = "Year",
                "SourceEUI" = "Source EUI", 
                "NormSiteEUI", "Weather Normalized Site EUI")
 
-#My RStudio won't seem to save RDS or RDATA files, so i'll just do this:
+#Having trouble loading in RDS or RDATA files, so setting data types here to make code more universally accessible:
 clean_bm$city <- as.character(clean_bm$city)
 clean_bm$Borough <- as.factor(clean_bm$Borough)
 clean_bm$Zip.Code <- as.integer(clean_bm$Zip.Code)
