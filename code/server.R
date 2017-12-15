@@ -12,7 +12,6 @@ library(googleVis)
 library(shinydashboard)
 library(shiny)
 
-
 shinyServer(
 
   function(input, output, session){
@@ -84,7 +83,7 @@ shinyServer(
   })
   
   citygroup <- reactive({
-    cityplots()%>%
+    cityplots() %>%
       group_by(Year) %>%
       summarise(count = n())
   })
@@ -96,12 +95,12 @@ shinyServer(
 
   output$city1 <- renderPlot({
     ggplot(citygroup(), aes(x = Year, y = count, fill = factor(Year))) + 
-      geom_histogram(width = .4, stat='identity') + 
+      geom_histogram(width = .4, stat = 'identity') + 
       ggtitle(paste0(input$radio, " Buildings\n Reporting Each Year")) + 
       ylab("") +
       theme_gdocs() +
       theme(plot.title = element_text(hjust = 0.5), 
-            axis.text = element_text(size=13), 
+            axis.text = element_text(size = 13), 
             axis.title = element_text(size = 14)) +
       scale_fill_discrete(guide = F)
   })  
@@ -113,7 +112,7 @@ shinyServer(
                      color = as.factor(Year))) +
       geom_point(alpha = .5) +
       ggtitle("Building Size vs. \nEnergy Use per Square Foot") +
-      scale_color_discrete(name="Year") +
+      scale_color_discrete(name = "Year") +
       ylab("Building Size (ft2)") +
       xlab("Energy Use Intensity (kBtu / ft2)") + 
       theme_gdocs() + 
@@ -122,7 +121,7 @@ shinyServer(
             axis.title = element_text(size = 14)) + 
       scale_y_continuous(labels = comma)
     
-    if (input$log==TRUE){
+    if (input$log == TRUE) {
       c2 <- c2 + coord_trans(y = 'log', x = 'log')  
       }
     c2
@@ -139,8 +138,8 @@ shinyServer(
       theme(plot.title = element_text(hjust = 0.5), 
             axis.text = element_text(size = 13), 
             axis.title = element_text(size = 14)) +
-      scale_x_continuous(labels = comma, breaks = seq(0, 3000000, 1000000), limits=c(0, 3000000))
-    if (input$log == TRUE){
+      scale_x_continuous(labels = comma, breaks = seq(0, 3000000, 1000000), limits = c(0, 3000000))
+    if (input$log == TRUE) {
         c3 <- c3 + coord_trans(y = 'log') + geom_jitter()
       }
     c3
@@ -192,9 +191,8 @@ shinyServer(
       mapy <- 38.94
       mapzoom <- 12
     }
-    
-    if(input$mapcity == "San Francisco") 
-    {mapx <- -122.4194
+    if (input$mapcity == "San Francisco") {
+      mapx <- -122.4194
       mapy <- 37.76 
       mapzoom <- 12
     }
@@ -217,7 +215,8 @@ shinyServer(
              "Weather Normalized Site EUI" = NormSiteEUI, 
              "Weather Normalized Source EUI" = NormSourceEUI, 
              "ENERGY STAR Score" = ENERGY.STAR.Score, 
-             "Reported Floor Area" = ReportedGFA, "Property Type" = PropType) %>%
+             "Reported Floor Area" = ReportedGFA, 
+             "Property Type" = PropType) %>%
       filter(City %in% input$data_cities, Year %in% input$data_years)
   })  
   
