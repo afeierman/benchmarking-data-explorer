@@ -1,2 +1,5 @@
 #don't store these files on git
+
+.Rhistory
 old/
+shinysetup.R
