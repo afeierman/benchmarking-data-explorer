@@ -8,4 +8,4 @@ This project was created as part of NYC Data Science Academy's Data Science Boot
 
 #### See more at: https://blog.nycdatascience.com/student-works/r-shiny/building-energy-benchmarking-data-us/#sthash.xMKWpH6n.dpuf
 
-##### Live app: https://energybenchmarking.shinyapps.io/code/
+##### Live app: https://andrewfeierman.shinyapps.io/code/
